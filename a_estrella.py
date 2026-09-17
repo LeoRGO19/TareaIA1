@@ -1,4 +1,5 @@
-class AlgoritmoBusquedaAEstrella(AlgoritmoBusqueda):
+from algoritmo_de_busqueda import AlgoritmoBusqueda
 
-    def buscar(self):
+class AlgoritmoBusquedaAEstrella(AlgoritmoBusqueda):
+    def buscar(self, tablero, inicio, objetivo, heuristica=None):
         pass
