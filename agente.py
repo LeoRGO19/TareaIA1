@@ -9,10 +9,23 @@ class Agente:
         self.algoritmo = nuevo_algoritmo
 
     def calcular_ruta(self, tablero, objetivo, heuristica=None):
-        self.camino_actual = self.algoritmo.buscar(tablero, self.posicion, objetivo, heuristica)
-        return self.camino_actual
+        return self.algoritmo.buscar(
+            tablero,
+            self.posicion,
+            objetivo,
+            heuristica,
+            self.funcion_costo
+        )
 
-    def mover(self):
-        if self.camino_actual:
-            self.posicion = self.camino_actual.pop(0)[0]
+    def mover(self, tablero, objetivo, heuristica=None):
+        ruta = self.calcular_ruta(tablero, objetivo, heuristica)
+
+        if len(ruta) > 1:
+            siguiente_posicion = ruta[1]
+
+            self.posicion = siguiente_posicion
+        else:
+            self.esperar()
             
+    def esperar(self):
+        pass
