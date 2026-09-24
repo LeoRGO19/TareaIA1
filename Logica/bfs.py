@@ -1,9 +1,10 @@
-from algoritmo_de_busqueda import AlgoritmoBusqueda
+from .algoritmo_de_busqueda import AlgoritmoBusqueda
 from collections import deque
+
 class BusquedaBFS(AlgoritmoBusqueda):
-    def buscar(self, tablero, inicio, objetivo):
+    def buscar(self, tablero, inicio, objetivo, heuristica=None, funcion_costo=None):
         filas, columnas = self._obtener_dimensiones(tablero)
-        cola = deque([inicio])  
+        cola = deque([inicio])
         visitados = {inicio}
         padres = {inicio: None}
 
@@ -14,11 +15,12 @@ class BusquedaBFS(AlgoritmoBusqueda):
 
             f, c = actual
             for df, dc in self.direcciones:
-                n_f, n_c = f + df, c + dc
-                vecino = (n_f, n_c)
-
-                if 0 <= n_f < filas and 0 <= n_c < columnas:
-                    if tablero[n_f][n_c].puede_entrar() and vecino not in visitados:
+                nf, nc = f + df, c + dc
+                vecino = (nf, nc)
+                # Verifica los límites de la grilla
+                if 0 <= nf < filas and 0 <= nc < columnas:
+                    # Valida si la casilla es transitable y no ha sido visitada
+                    if tablero[nf][nc].puede_entrar() and vecino not in visitados:
                         visitados.add(vecino)
                         padres[vecino] = actual
                         cola.append(vecino)
