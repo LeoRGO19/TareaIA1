@@ -8,7 +8,7 @@ class BusquedaEstrella(AlgoritmoBusqueda):
 
         filas, columnas = self._obtener_dimensiones(tablero)
         pq = []
-        # Los elementos en la cola de prioridad son de este modo: (f_score, g_score, nodo_actual)
+        # Elementos en la cola de prioridad = (f_score, g_score, nodo_actual)
         heapq.heappush(pq, (0 + heuristica(inicio, objetivo), 0, inicio))
         
         g_score = {inicio: 0}

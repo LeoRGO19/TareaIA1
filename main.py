@@ -35,7 +35,7 @@ def ejecutar_simulacion_visual(mapa_archivo, algoritmo_clase, es_informado, nomb
                 ejecutando = False
 
         # Avanzar 1 turno global
-        if not gestor.simulación_terminada():
+        if not gestor.simulacion_terminada():
             gestor.ejecutar_turno()
 
         # Dibujar escenario
@@ -63,8 +63,8 @@ if __name__ == "__main__":
     # Algoritmos: BusquedaEstrella, BusquedaBFS, BusquedaDFS, AlgoritmoBusquedaIDAEstrella, AlgoritmoGenetico
     
     ejecutar_simulacion_visual(
-        mapa_archivo="mapa_laberinto_corporativo.txt",
-        algoritmo_clase=BusquedaEstrella,
+        mapa_archivo="mapa_laberinto_cuello_botella.txt",
+        algoritmo_clase=BusquedaBFS,
         es_informado=True,
-        nombre_algoritmo="A*"
+        nombre_algoritmo="BFS"
     )

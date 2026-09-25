@@ -17,9 +17,8 @@ class BusquedaBFS(AlgoritmoBusqueda):
             for df, dc in self.direcciones:
                 nf, nc = f + df, c + dc
                 vecino = (nf, nc)
-                # Verifica los límites de la grilla
+                # verifica los límites de la grilla
                 if 0 <= nf < filas and 0 <= nc < columnas:
-                    # Valida si la casilla es transitable y no ha sido visitada
                     if tablero[nf][nc].puede_entrar() and vecino not in visitados:
                         visitados.add(vecino)
                         padres[vecino] = actual

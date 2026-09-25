@@ -5,15 +5,16 @@ from Logica.dfs import BusquedaDFS
 from Logica.a_estrella import BusquedaEstrella
 from Logica.ida import AlgoritmoBusquedaIDAEstrella
 from Logica.algoritmo_genetico import AlgoritmoGenetico
-
-def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=80):
+NUMERO_DE_ITERACIONES = 200
+KTURNOS_FUEGO = 2
+def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=NUMERO_DE_ITERACIONES):
     tasas_supervivencia = []
     tiempos_despeje = []
 
     for _ in range(n_iteraciones):
-        gestor = GestorDeEventos(mapa_file, algoritmo_cls, es_informado=es_informado, k_turnos_fuego=3)
+        gestor = GestorDeEventos(mapa_file, algoritmo_cls, es_informado=es_informado, k_turnos_fuego=KTURNOS_FUEGO)
         
-        while not gestor.simulación_terminada() and gestor.turnos_totales < 300:
+        while not gestor.simulacion_terminada() and gestor.turnos_totales < 300:
             gestor.ejecutar_turno()
 
         sobrevivientes, total, tasa, turnos = gestor.obtener_resultados()
@@ -42,9 +43,9 @@ if __name__ == "__main__":
     ]
 
     print("=" * 60)
-    print("EJECUTANDO SUITE DE BENCHMARKING (80 Iteraciones por Configuración)")
+    print("EJECUTANDO SUITE DE BENCHMARKING (200 Iteraciones por Configuración)")
     print("=" * 60)
 
     for ruta_mapa, nombre_mapa in mapas:
         for alg_cls, es_inf, nombre_alg in algoritmos:
-            evaluar_configuracion(ruta_mapa, nombre_mapa, alg_cls, es_inf, nombre_alg, n_iteraciones=80)
+            evaluar_configuracion(ruta_mapa, nombre_mapa, alg_cls, es_inf, nombre_alg, n_iteraciones=NUMERO_DE_ITERACIONES)
