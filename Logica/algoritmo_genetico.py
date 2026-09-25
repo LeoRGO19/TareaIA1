@@ -39,10 +39,6 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
         filas, columnas = self._obtener_dimensiones(tablero)
         longitud_cromo = filas + columnas + 10
 
-    def buscar(self, tablero, inicio, objetivo, heuristica=None, funcion_costo=None):
-        filas, columnas = self._obtener_dimensiones(tablero)
-        longitud_cromo = filas + columnas + 10
-
         def evaluar(cromo):
             pos = inicio
             camino = [pos]
@@ -55,6 +51,7 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                 # fuera de los límites de la grilla
                 if not (0 <= nf < filas and 0 <= nc < columnas):
                     costo_acumulado += 2.0  # Penalización por perder el turno contra el borde
+                    camino.append(pos)
                     continue
 
                 casilla = tablero[nf][nc]
