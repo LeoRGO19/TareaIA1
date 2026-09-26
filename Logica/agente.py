@@ -10,6 +10,7 @@ class Agente:
         self.color = color
         self.evacuado = False
         self.fallecido = False
+        self.turno_evacuacion = None
         self.ruta_planeada = [] # guarda la ruta generada para no recalcular en cada paso si no es necesario
         self.turnos_esperando = 0  # cantidad de turnos retenido por espera por el cuello de botella
         self.turnos_hasta_reintento = 0  # tiempo de enfriamiento si falla la búsqueda

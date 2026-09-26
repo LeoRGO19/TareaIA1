@@ -6,7 +6,7 @@ from Logica.a_estrella import BusquedaEstrella
 from Logica.ida import AlgoritmoBusquedaIDAEstrella
 from Logica.algoritmo_genetico import AlgoritmoGenetico
 NUMERO_DE_ITERACIONES = 100
-KTURNOS_FUEGO = 3
+KTURNOS_FUEGO = 4
 def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=NUMERO_DE_ITERACIONES):
     tasas_supervivencia = []
     tiempos_despeje = []
@@ -17,9 +17,10 @@ def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, n
         while not gestor.simulacion_terminada() and gestor.turnos_totales < 300:
             gestor.ejecutar_turno()
 
-        sobrevivientes, total, tasa, turnos = gestor.obtener_resultados()
+        sobrevivientes, total, tasa, turnos_despeje = gestor.obtener_resultados()
         tasas_supervivencia.append(tasa)
-        tiempos_despeje.append(turnos)
+        if turnos_despeje is not None:
+            tiempos_despeje.append(turnos_despeje)
         iteracion_actual = _ + 1
 
         if iteracion_actual % (max(1, n_iteraciones // 10)) == 0 or iteracion_actual == n_iteraciones:
@@ -27,8 +28,12 @@ def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, n
 
     print(f"[{nombre_mapa}] -> Algoritmo: {nombre_algo}")
     print(f"  Tasa Supervivencia Media: {np.mean(tasas_supervivencia) * 100:.2f}%")
-    print(f"  Turnos Despeje (Media ± Std): {np.mean(tiempos_despeje):.2f} ± {np.std(tiempos_despeje):.2f}")
-    print(f"  Rango Turnos [Min, Max]: [{np.min(tiempos_despeje)}, {np.max(tiempos_despeje)}]")
+    if tiempos_despeje:
+        print(f"  Turnos Despeje (Media ± Std): {np.mean(tiempos_despeje):.2f} ± {np.std(tiempos_despeje):.2f}")
+        print(f"  Rango Turnos [Min, Max]: [{np.min(tiempos_despeje)}, {np.max(tiempos_despeje)}]")
+    else:
+        print("  Turnos Despeje: N/A (ninguna simulación tuvo agentes evacuados)")
+    print(f"  Corridas con tiempo definido: {len(tiempos_despeje)}/{n_iteraciones}")
     print("-" * 50)
 
 if __name__ == "__main__":

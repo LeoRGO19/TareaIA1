@@ -97,6 +97,8 @@ class GestorDeEventos:
 
         for ag in agentes_activos:
             ag.mover(self.grilla, self.objetivo)
+            if ag.evacuado and ag.turno_evacuacion is None:
+                ag.turno_evacuacion = self.turnos_totales
         # propagación del fuego cada k turnos
         if self.turnos_totales % self.k_turnos_fuego == 0:
             self.propagar_fuego()
@@ -124,4 +126,10 @@ class GestorDeEventos:
         total = len(self.agentes)
         sobrevivientes = sum(1 for ag in self.agentes if ag.evacuado)
         tasa_supervivencia = (sobrevivientes / total) if total > 0 else 0.0
-        return sobrevivientes, total, tasa_supervivencia, self.turnos_totales
+        turnos_evacuacion = [
+            ag.turno_evacuacion
+            for ag in self.agentes
+            if ag.turno_evacuacion is not None
+        ]
+        turnos_despeje = max(turnos_evacuacion) if turnos_evacuacion else None
+        return sobrevivientes, total, tasa_supervivencia, turnos_despeje
