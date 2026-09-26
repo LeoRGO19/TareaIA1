@@ -2,13 +2,20 @@ import random
 from .lector_de_mapas import LectorDeMapas
 from .agente import Agente
 RADIO_PROTECCION_AGENTES = 1
-FILAS_PROTEGIDAS_AL_FINAL = 4
+FILAS_PROTEGIDAS_AL_FINAL = 8
 PROBABILIDAD_PROPAGACION_FUEGO = 0.75
 
 
 class GestorDeEventos:
-    def __init__(self, ruta_mapa: str, clase_algoritmo, es_informado=True, k_turnos_fuego: int = 3):
+    def __init__(self, ruta_mapa: str, clase_algoritmo, es_informado=True, k_turnos_fuego: int = 3, numero_agentes: int | None = None):
         self.grilla, self.objetivo, pos_agentes = LectorDeMapas.cargar_mapa(ruta_mapa)
+        if numero_agentes is not None:
+            if numero_agentes < 1 or numero_agentes > len(pos_agentes):
+                raise ValueError(
+                    f"El mapa contiene {len(pos_agentes)} posiciones A; "
+                    f"numero_agentes debe estar entre 1 y ese valor."
+                )
+            pos_agentes = pos_agentes[:numero_agentes]
         self.k_turnos_fuego = k_turnos_fuego
         self.turnos_totales = 0
         self.agentes = []

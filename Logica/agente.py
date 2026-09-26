@@ -12,6 +12,7 @@ class Agente:
         self.fallecido = False
         self.ruta_planeada = [] # guarda la ruta generada para no recalcular en cada paso si no es necesario
         self.turnos_esperando = 0  # cantidad de turnos retenido por espera por el cuello de botella
+        self.turnos_hasta_reintento = 0  # tiempo de enfriamiento si falla la búsqueda
 
     def mover(self, grilla, objetivo):
         if self.evacuado or self.fallecido:
@@ -29,25 +30,49 @@ class Agente:
             casilla_act.remover_agente(self)
             return
 
-        # comprueba si la ruta actual sigue siendo válida si el siguiente paso no se quemó
+        # decrementa el contador de espera para reintentar búsqueda si está activo
+        if self.turnos_hasta_reintento > 0:
+            self.turnos_hasta_reintento -= 1
+
+        # comprueba si se requiere recalcular la ruta
         necesita_recalcular = False
         if not self.ruta_planeada or len(self.ruta_planeada) <= 1:
-            necesita_recalcular = True
+            # solo recalcula si no está en período de enfriamiento
+            if self.turnos_hasta_reintento == 0:
+                necesita_recalcular = True
         else:
             siguiente_paso = self.ruta_planeada[1]
             casilla_paso = grilla.obtener_casilla(siguiente_paso[0], siguiente_paso[1])
-            # se fuerza el cálculo si el siguiente paso se incendió o bloqueó
-            if not casilla_paso or not casilla_paso.puede_entrar():
+            # se fuerza el cálculo si el siguiente paso se incendió o bloqueó (y expiró el enfriamiento)
+            if (not casilla_paso or not casilla_paso.puede_entrar()) and self.turnos_hasta_reintento == 0:
                 necesita_recalcular = True
 
-        # si no hay ruta o el camino fue bloqueado por fuego/muro, calculamos de nuevo
+        # si necesita recalcular y finalizó el enfriamiento
         if necesita_recalcular:
-            self.ruta_planeada = self.algoritmo.buscar(
+            resultado_busqueda = self.algoritmo.buscar(
                 grilla.tablero,
                 self.posicion,
                 objetivo,
                 funcion_costo=costo_congestion_cuadratica
             )
+
+            # normaliza rutas simples, tuplas y respuestas None de algoritmos sin solución.
+            if isinstance(resultado_busqueda, tuple):
+                ruta, encontro_ruta = resultado_busqueda
+            else:
+                ruta = resultado_busqueda
+                encontro_ruta = bool(ruta) and len(ruta) > 1 and ruta[-1] == objetivo
+
+            if ruta is None:
+                ruta = []
+                encontro_ruta = False
+
+            if encontro_ruta:
+                self.ruta_planeada = ruta
+                self.turnos_hasta_reintento = 0
+            else:
+                self.ruta_planeada = []
+                self.turnos_hasta_reintento = 5  # bloquea reintentos por 5 turnos
 
         siguiente = None
         origen_ruta = False  # para saber si hay que consumirla

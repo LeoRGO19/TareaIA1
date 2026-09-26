@@ -1,17 +1,18 @@
-from .algoritmo_de_busqueda import AlgoritmoBusqueda
 import random
+from .algoritmo_de_busqueda import AlgoritmoBusqueda
 
 class AlgoritmoGenetico(AlgoritmoBusqueda):
-    def __init__(self, tam_poblacion=15, generaciones=20, tasa_mutacion=0.15, prob_sesgo=0.65):
+    def __init__(self, tam_poblacion=8, generaciones=8, tasa_mutacion=0.15, prob_sesgo=0.65, longitud_maxima=60):
         super().__init__()
-        self.tam_poblacion = tam_poblacion
-        self.generaciones = generaciones
+        self.tam_poblacion = max(2, tam_poblacion)
+        self.generaciones = max(1, generaciones)
         self.tasa_mutacion = tasa_mutacion
         self.prob_sesgo = prob_sesgo
-        # añadimos el movimiento de esperar, por eso no uso el que creé en la clase base
+        self.longitud_maxima = longitud_maxima
+        # Movimiento de esperar incluido
         self.acciones_ag = [(-1, 0), (1, 0), (0, -1), (0, 1), (0, 0)]
+
     def _mejor_direccion(self, pos, objetivo):
-        # retorna la acción que más acerca al objetivo según manhattan
         mejor = self.acciones_ag[0]
         dist_minima = float('inf')
         
@@ -22,7 +23,7 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                 mejor = d
                 
         return mejor
-    # genera un individuo aleatorio, con cierta probabilidad de sesgo hacia la mejor dirección        
+
     def _generar_individuo(self, inicio, objetivo, longitud):
         individuo = []
         pos_tentativa = inicio
@@ -37,7 +38,8 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
 
     def buscar(self, tablero, inicio, objetivo, heuristica=None, funcion_costo=None):
         filas, columnas = self._obtener_dimensiones(tablero)
-        longitud_cromo = filas + columnas + 10
+        # se debe limitar la longitud del cromosoma para evitar que se generen rutas demasiado largas que no tengan sentido
+        longitud_cromo = min(filas + columnas + 10, self.longitud_maxima)
 
         def evaluar(cromo):
             pos = inicio
@@ -48,15 +50,15 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
             for df, dc in cromo:
                 nf, nc = pos[0] + df, pos[1] + dc
                 
-                # fuera de los límites de la grilla
+                # Fuera de límites
                 if not (0 <= nf < filas and 0 <= nc < columnas):
-                    costo_acumulado += 2.0  # Penalización por perder el turno contra el borde
+                    costo_acumulado += 2.0
                     camino.append(pos)
                     continue
 
                 casilla = tablero[nf][nc]
                 
-                # casilla transitable
+         
                 if casilla.puede_entrar():
                     pos = (nf, nc)
                     costo_paso = casilla.obtener_costo(funcion_costo) if funcion_costo else 1.0
@@ -67,24 +69,18 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                         llego_objetivo = True
                         break
                 else:
-                    # permanece donde está pero penaliza
                     if casilla.tipo == "fuego":
-                        costo_acumulado += 10.0  # penaliza por intentar cruzar fuego
+                        costo_acumulado += 10.0
                     else:
-                        costo_acumulado += 1.5   # penaliza por chocar contra un muro
+                        costo_acumulado += 1.5
 
-            # distancia manhattan restante al objetivo desde donde quedó el agente
             dist_restante = abs(pos[0] - objetivo[0]) + abs(pos[1] - objetivo[1])
-
-            # fitness base prioriza cercanía y menor costo
             fitness = (dist_restante * 15.0) + costo_acumulado
 
-            # si no llegó, se penaliza proporcionalmente a la distancia faltante + bonus constante
             if not llego_objetivo:
                 fitness += 200.0 + (dist_restante * 10.0)
 
             return fitness, camino, llego_objetivo
-
         # crear población inicial
         poblacion = [
             self._generar_individuo(inicio, objetivo, longitud_cromo) 
@@ -94,6 +90,7 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
         mejor_camino = [inicio]
         mejor_fit = float('inf')
         solucion_encontrada = False
+        generaciones_sin_mejora = 0
 
         for _ in range(self.generaciones):
             evaluados = []
@@ -101,26 +98,33 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                 fit, cam, llego = evaluar(ind)
                 evaluados.append((fit, cam, ind, llego))
             
-            # ordena por menor fitness
             evaluados.sort(key=lambda x: x[0])
 
-            # actualizar mejor solución priorizando si realmente llegó
             top_fit, top_cam, _, top_llego = evaluados[0]
             
-            # Acepta el nuevo camino si
-            # o si encontró la meta por primera vez
-            # o si ya tenía una solución válida y esta nueva es más eficiente
-            # o si aún no encuentra la meta, pero este individuo llegó más cerca que los anteriores
             if (top_llego and not solucion_encontrada) or \
                (top_llego and top_fit < mejor_fit) or \
                (not solucion_encontrada and top_fit < mejor_fit):
+                if top_fit < mejor_fit:
+                    generaciones_sin_mejora = 0
+                else:
+                    generaciones_sin_mejora += 1
                 mejor_fit = top_fit
                 mejor_camino = top_cam
                 if top_llego:
                     solucion_encontrada = True
+            else:
+                generaciones_sin_mejora += 1
 
-            # selección de la mejor mitad
-            mitad = self.tam_poblacion // 2
+            # Punto 3: Detener tempranamente si ya llegó al objetivo
+            if top_llego:
+                break
+
+            if generaciones_sin_mejora >= 3:
+                break
+
+            # selección
+            mitad = max(2, self.tam_poblacion // 2)
             seleccionados = [item[2] for item in evaluados[:mitad]]
             nueva_pob = seleccionados[:]
 
@@ -139,6 +143,5 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
 
             poblacion = nueva_pob
 
-        return mejor_camino
-
-
+        # retorna tupla de camino y éxito de búsqueda
+        return mejor_camino, solucion_encontrada

@@ -6,7 +6,7 @@ from Logica.a_estrella import BusquedaEstrella
 from Logica.ida import AlgoritmoBusquedaIDAEstrella
 from Logica.algoritmo_genetico import AlgoritmoGenetico
 NUMERO_DE_ITERACIONES = 100
-KTURNOS_FUEGO = 4
+KTURNOS_FUEGO = 3
 def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=NUMERO_DE_ITERACIONES):
     tasas_supervivencia = []
     tiempos_despeje = []
@@ -20,10 +20,10 @@ def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, n
         sobrevivientes, total, tasa, turnos = gestor.obtener_resultados()
         tasas_supervivencia.append(tasa)
         tiempos_despeje.append(turnos)
-        i = _  # índice de la iteración actual
+        iteracion_actual = _ + 1
 
-        if i % (max(1, NUMERO_DE_ITERACIONES // 10)) == 0 or i == NUMERO_DE_ITERACIONES - 1:
-            print(f"  > Progreso: {i}/{NUMERO_DE_ITERACIONES} simulaciones completadas...")
+        if iteracion_actual % (max(1, n_iteraciones // 10)) == 0 or iteracion_actual == n_iteraciones:
+            print(f"  > Progreso: {iteracion_actual}/{n_iteraciones} simulaciones completadas...", flush=True)
 
     print(f"[{nombre_mapa}] -> Algoritmo: {nombre_algo}")
     print(f"  Tasa Supervivencia Media: {np.mean(tasas_supervivencia) * 100:.2f}%")
@@ -43,11 +43,12 @@ if __name__ == "__main__":
         (BusquedaDFS, False, "DFS (No Informado)"),
         (BusquedaEstrella, True, "A* (Informado)"),
         (AlgoritmoBusquedaIDAEstrella, True, "IDA* (Informado)"),
-        (AlgoritmoGenetico, True, "Algoritmo Genético (Bioinspirado)")
+        (AlgoritmoGenetico, True, "Algoritmo Genético (Informado)"),
+
     ]
 
     print("=" * 60)
-    print("EJECUTANDO SUITE DE BENCHMARKING (200 Iteraciones por Configuración)")
+    print(f"EJECUTANDO SUITE DE BENCHMARKING ({NUMERO_DE_ITERACIONES} Iteraciones por Configuración)")
     print("=" * 60)
 
     for ruta_mapa, nombre_mapa in mapas:
