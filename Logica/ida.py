@@ -4,6 +4,11 @@ class AlgoritmoBusquedaIDAEstrella(AlgoritmoBusqueda):
     MAX_NODOS_POR_BUSQUEDA = 500
 
     def buscar(self, tablero, inicio, objetivo, heuristica=None, funcion_costo=None):
+        self.nodos_explorados = 0
+        self.limite_nodos_alcanzado = False
+        self.llamadas_busqueda = getattr(self, "llamadas_busqueda", 0) + 1
+        if not hasattr(self, "limites_nodos_acumulados"):
+            self.limites_nodos_acumulados = 0
         if heuristica is None:
             heuristica = lambda a, b: abs(a[0] - b[0]) + abs(a[1] - b[1])
 
@@ -43,8 +48,12 @@ class AlgoritmoBusquedaIDAEstrella(AlgoritmoBusqueda):
         nodos_explorados
     ):
         if nodos_explorados[0] >= self.MAX_NODOS_POR_BUSQUEDA:
+            if not self.limite_nodos_alcanzado:
+                self.limite_nodos_alcanzado = True
+                self.limites_nodos_acumulados += 1
             return float('inf'), None
         nodos_explorados[0] += 1
+        self.nodos_explorados = nodos_explorados[0]
 
         actual = camino[-1]
         f = g + heuristica(actual, objetivo)

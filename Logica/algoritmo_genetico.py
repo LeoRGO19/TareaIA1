@@ -2,6 +2,8 @@ import random
 from .algoritmo_de_busqueda import AlgoritmoBusqueda
 
 class AlgoritmoGenetico(AlgoritmoBusqueda):
+    usa_memoria_respaldo = True
+
     def __init__(self, tam_poblacion=8, generaciones=8, tasa_mutacion=0.15, prob_sesgo=0.65, longitud_maxima=60):
         super().__init__()
         self.tam_poblacion = max(2, tam_poblacion)
@@ -34,6 +36,16 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                 gen = random.choice(self.acciones_ag)
             individuo.append(gen)
             pos_tentativa = (pos_tentativa[0] + gen[0], pos_tentativa[1] + gen[1])
+        return individuo
+
+    def _mutar(self, individuo):
+        """Cambia un gen por una acción distinta; una mutación nunca es un no-op."""
+        if not individuo:
+            return individuo
+        indice = random.randrange(len(individuo))
+        accion_actual = individuo[indice]
+        alternativas = [accion for accion in self.acciones_ag if accion != accion_actual]
+        individuo[indice] = random.choice(alternativas)
         return individuo
 
     def buscar(self, tablero, inicio, objetivo, heuristica=None, funcion_costo=None):
@@ -90,6 +102,8 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
         mejor_camino = [inicio]
         mejor_fit = float('inf')
         solucion_encontrada = False
+        mejor_camino_factible = None
+        mejor_costo_factible = float('inf')
         generaciones_sin_mejora = 0
 
         for _ in range(self.generaciones):
@@ -99,6 +113,12 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
                 evaluados.append((fit, cam, ind, llego))
             
             evaluados.sort(key=lambda x: x[0])
+
+            for fit, cam, _, llego in evaluados:
+                if llego and fit < mejor_costo_factible:
+                    mejor_camino_factible = cam
+                    mejor_costo_factible = fit
+                    solucion_encontrada = True
 
             top_fit, top_cam, _, top_llego = evaluados[0]
             
@@ -116,10 +136,6 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
             else:
                 generaciones_sin_mejora += 1
 
-            # Punto 3: Detener tempranamente si ya llegó al objetivo
-            if top_llego:
-                break
-
             if generaciones_sin_mejora >= 3:
                 break
 
@@ -131,17 +147,17 @@ class AlgoritmoGenetico(AlgoritmoBusqueda):
             # reproducción y cruzamiento
             while len(nueva_pob) < self.tam_poblacion:
                 p1, p2 = random.sample(seleccionados, 2)
-                corte = random.randint(1, longitud_cromo - 1)
+                corte = random.randint(1, longitud_cromo - 1) if longitud_cromo > 1 else 1
                 hijo = p1[:corte] + p2[corte:]
                 
                 # mutación
                 if random.random() < self.tasa_mutacion:
-                    idx = random.randint(0, longitud_cromo - 1)
-                    hijo[idx] = random.choice(self.acciones_ag)
+                    self._mutar(hijo)
                     
                 nueva_pob.append(hijo)
 
             poblacion = nueva_pob
 
-        # retorna tupla de camino y éxito de búsqueda
-        return mejor_camino, solucion_encontrada
+        if mejor_camino_factible is not None:
+            return mejor_camino_factible, True
+        return mejor_camino, False

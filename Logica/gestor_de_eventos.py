@@ -4,10 +4,17 @@ from .agente import Agente
 RADIO_PROTECCION_AGENTES = 1
 FILAS_PROTEGIDAS_AL_FINAL = 8
 PROBABILIDAD_PROPAGACION_FUEGO = 0.75
+PROBABILIDAD_ATRAVESAR_PARED = 0.25
 
 
 class GestorDeEventos:
-    def __init__(self, ruta_mapa: str, clase_algoritmo, es_informado=True, k_turnos_fuego: int = 3, numero_agentes: int | None = None):
+    def __init__(self, ruta_mapa: str, clase_algoritmo, es_informado=True, k_turnos_fuego: int = 3, numero_agentes: int | None = None, probabilidad_fuego: float = PROBABILIDAD_PROPAGACION_FUEGO, probabilidad_atravesar_pared: float = PROBABILIDAD_ATRAVESAR_PARED):
+        if k_turnos_fuego < 1:
+            raise ValueError("k_turnos_fuego debe ser al menos 1")
+        if not 0.0 <= probabilidad_fuego <= 1.0:
+            raise ValueError("probabilidad_fuego debe estar entre 0 y 1")
+        if not 0.0 <= probabilidad_atravesar_pared <= 1.0:
+            raise ValueError("probabilidad_atravesar_pared debe estar entre 0 y 1")
         self.grilla, self.objetivo, pos_agentes = LectorDeMapas.cargar_mapa(ruta_mapa)
         if numero_agentes is not None:
             if numero_agentes < 1 or numero_agentes > len(pos_agentes):
@@ -17,15 +24,19 @@ class GestorDeEventos:
                 )
             pos_agentes = pos_agentes[:numero_agentes]
         self.k_turnos_fuego = k_turnos_fuego
+        self.probabilidad_fuego = probabilidad_fuego
+        self.probabilidad_atravesar_pared = probabilidad_atravesar_pared
         self.turnos_totales = 0
         self.agentes = []
 
         for i, pos in enumerate(pos_agentes):
+            algoritmo = clase_algoritmo()
             ag = Agente(
                 id_agente=i,
                 posicion_inicial=pos,
-                algoritmo_busqueda=clase_algoritmo(),
-                es_informado=es_informado
+                algoritmo_busqueda=algoritmo,
+                es_informado=es_informado,
+                usar_memoria_respaldo=getattr(algoritmo, "usa_memoria_respaldo", False),
             )
             self.agentes.append(ag)
             casilla = self.grilla.obtener_casilla(pos[0], pos[1])
@@ -39,7 +50,7 @@ class GestorDeEventos:
         casilla = self.grilla.obtener_casilla(fila, columna)
         return bool(
             casilla
-            and casilla.tipo != "fuego"
+            and casilla.tipo not in ("fuego", "muro")
             and posicion != self.objetivo
         )
 
@@ -105,14 +116,29 @@ class GestorDeEventos:
 
     def propagar_fuego(self):
         nuevos_fuegos = set()
+        direcciones = ((-1, 0), (1, 0), (0, -1), (0, 1))
         for f in range(self.grilla.filas):
             for c in range(self.grilla.columnas):
                 if self.grilla.tablero[f][c].tipo == "fuego":
-                    for nf, nc in self.grilla.obtener_vecinos((f, c)):
-                        posicion_vecina = (nf, nc)
-                        if self.es_celda_valida_para_fuego(posicion_vecina):
-                            if random.random() < PROBABILIDAD_PROPAGACION_FUEGO:
-                                nuevos_fuegos.add(posicion_vecina)
+                    for df, dc in direcciones:
+                        nf, nc = f + df, c + dc
+                        grosor_pared = 0
+                        while 0 <= nf < self.grilla.filas and 0 <= nc < self.grilla.columnas:
+                            casilla = self.grilla.obtener_casilla(nf, nc)
+                            if casilla.tipo == "muro":
+                                grosor_pared += 1
+                                nf += df
+                                nc += dc
+                                continue
+                            destino = (nf, nc)
+                            if not self.es_celda_valida_para_fuego(destino):
+                                break
+                            probabilidad = self.probabilidad_fuego
+                            if grosor_pared:
+                                probabilidad = self.probabilidad_atravesar_pared ** grosor_pared
+                            if random.random() < probabilidad:
+                                nuevos_fuegos.add(destino)
+                            break
 
         for f, c in nuevos_fuegos:
             self.grilla.cambiar_tipo(f, c, "fuego")

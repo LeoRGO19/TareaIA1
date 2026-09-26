@@ -1,7 +1,10 @@
 from .casilla import costo_congestion_cuadratica
 
 class Agente:
-    def __init__(self, id_agente, posicion_inicial, algoritmo_busqueda, es_informado=True, color=(0, 0, 255)):
+    MAX_VISITAS_POR_CELDA = 3
+
+    def __init__(self, id_agente, posicion_inicial, algoritmo_busqueda, es_informado=True,
+                 color=(0, 0, 255), usar_memoria_respaldo=False):
         self.id = id_agente
         self.posicion = posicion_inicial
         self.posicion_anterior = None
@@ -14,10 +17,41 @@ class Agente:
         self.ruta_planeada = [] # guarda la ruta generada para no recalcular en cada paso si no es necesario
         self.turnos_esperando = 0  # cantidad de turnos retenido por espera por el cuello de botella
         self.turnos_hasta_reintento = 0  # tiempo de enfriamiento si falla la búsqueda
+        self.usar_memoria_respaldo = usar_memoria_respaldo
+        self.turnos_activos = 0
+        # memoria dispersa: solo almacena celdas visitadas, con conteo acotado y última visita.
+        self.memoria_visitas = {posicion_inicial: (1, 0)} if usar_memoria_respaldo else {}
+
+    def _registrar_visita(self, posicion):
+        visitas, _ = self.memoria_visitas.get(posicion, (0, -1))
+        self.memoria_visitas[posicion] = (
+            min(visitas + 1, self.MAX_VISITAS_POR_CELDA),
+            self.turnos_activos,
+        )
+
+    def _elegir_vecino_de_respaldo(self, grilla, objetivo):
+        candidatos = []
+        for posicion in grilla.obtener_vecinos(self.posicion):
+            casilla = grilla.obtener_casilla(*posicion)
+            if not casilla or not casilla.puede_entrar():
+                continue
+            if posicion != objetivo and casilla.esta_congestionada():
+                continue
+            visitas, ultima_visita = self.memoria_visitas.get(posicion, (0, -1))
+            distancia_meta = abs(posicion[0] - objetivo[0]) + abs(posicion[1] - objetivo[1])
+            candidatos.append((visitas, posicion == self.posicion_anterior,
+                               distancia_meta, ultima_visita, posicion))
+        if not candidatos:
+            return None
+        # Favorece celdas menos visitadas; en empate, evita retroceder de inmediato,
+        # se acerca a la salida y desempata por la visita más antigua.
+        return min(candidatos)[-1]
 
     def mover(self, grilla, objetivo):
         if self.evacuado or self.fallecido:
             return
+        if self.usar_memoria_respaldo:
+            self.turnos_activos += 1
 
         casilla_act = grilla.obtener_casilla(self.posicion[0], self.posicion[1])
 
@@ -81,16 +115,19 @@ class Agente:
             siguiente = self.ruta_planeada[1]
             origen_ruta = True
         else:
-            # si no hay ruta a la meta avanza a un vecino válido evitando volver a la casilla inmediatamente anterior
-            vecinos = grilla.obtener_vecinos(self.posicion)
-            validos = [v for v in vecinos if grilla.obtener_casilla(v[0], v[1]).puede_entrar()]
-
-            # prioriza casillas que no sean la posición anterior
-            opciones = [v for v in validos if v != self.posicion_anterior]
-            if opciones:
-                siguiente = opciones[0]
-            elif validos:
-                siguiente = validos[0]  # si está acorralado debe retroceder
+            if self.usar_memoria_respaldo:
+                # el genético explora con memoria solo cuando no encontró una ruta.
+                siguiente = self._elegir_vecino_de_respaldo(grilla, objetivo)
+            else:
+                # comportamiento previo para BFS, DFS, A* e IDA*.
+                vecinos = grilla.obtener_vecinos(self.posicion)
+                validos = [v for v in vecinos
+                           if grilla.obtener_casilla(v[0], v[1]).puede_entrar()]
+                opciones = [v for v in validos if v != self.posicion_anterior]
+                if opciones:
+                    siguiente = opciones[0]
+                elif validos:
+                    siguiente = validos[0]
 
         if siguiente is None:
             # si está acorralado sin ningún vecino transitable debe esperar
@@ -111,6 +148,8 @@ class Agente:
         self.posicion_anterior = self.posicion
         self.posicion = siguiente
         casilla_sig.agregar_agente(self)
+        if self.usar_memoria_respaldo:
+            self._registrar_visita(siguiente)
 
         # solo consumimos el paso de la ruta planeada si efectivamente nos movimos
         if origen_ruta:
