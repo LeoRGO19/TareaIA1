@@ -14,9 +14,9 @@ def ejecutar_simulacion_visual(mapa_archivo, algoritmo_clase, es_informado, nomb
     pygame.init()
     
     # Crear el gestor para el mapa y algoritmo seleccionados
-    gestor = GestorDeEventos(mapa_archivo, algoritmo_clase, es_informado=es_informado, k_turnos_fuego=2)
+    gestor = GestorDeEventos(mapa_archivo, algoritmo_clase, es_informado=es_informado, k_turnos_fuego=5)
 
-    tam_casilla = 35
+    tam_casilla = 15
     ancho_mapa = gestor.grilla.columnas * tam_casilla
     alto_mapa = gestor.grilla.filas * tam_casilla
     panel_alto = 50
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     # Algoritmos: BusquedaEstrella, BusquedaBFS, BusquedaDFS, AlgoritmoBusquedaIDAEstrella, AlgoritmoGenetico
     
     ejecutar_simulacion_visual(
-        mapa_archivo="mapa_laberinto_cuello_botella.txt",
+        mapa_archivo="mapa_cuello_botella50x50.txt",
         algoritmo_clase=BusquedaBFS,
         es_informado=True,
         nombre_algoritmo="BFS"

@@ -1,46 +1,48 @@
+from pathlib import Path
+
 from PIL import Image
 
-def pixel_art_a_binario(ruta_imagen):
-    # Abrir la imagen y convertirla a escala de grises para mayor precisión
-    img = Image.open(ruta_imagen).convert('L')
+COLORES_MAPA = {
+    (255, 0, 0): "A",  # agente
+    (255, 255, 255): "0",  # camino
+    (0, 0, 0): "1",  # muro
+    (0, 255, 0): "S",  # salida
+}
+
+
+def pixel_art_a_mapa(ruta_imagen):
+    img = Image.open(ruta_imagen).convert('RGB')
     ancho, alto = img.size
-    
     resultado = []
-    
+
     for y in range(alto):
         linea = []
         for x in range(ancho):
-            brillo = img.getpixel((x, y))
-            
-            # En escala de grises, 0 es negro puro y 255 es blanco puro
-            # Usamos un umbral de 128 por si hay tonos intermedios
-            if brillo < 128:
-                caracter = "1"  # Negro
-            else:
-                caracter = "0"  # Blanco
-            
-            # Agrega el número seguido de un espacio horizontal
-            linea.append(caracter + " ")
-            
-        # Une los caracteres de la fila y elimina el espacio extra del final
-        resultado.append("".join(linea).rstrip())
-        
+            color = img.getpixel((x, y))
+            if color not in COLORES_MAPA:
+                raise ValueError(
+                    f"Color no reconocido en ({x}, {y}): #{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+                )
+            linea.append(COLORES_MAPA[color])
+        resultado.append(" ".join(linea))
+
     return "\n".join(resultado)
 
 # --- CONFIGURACIÓN Y EJECUCIÓN ---
-archivo_origen = 'LaberintoCuello2.png'  # Cambia esto por el nombre de tu archivo de Paint
-archivo_destino = 'mapa_laberinto_cuello_botella.txt'
+carpeta_assets = Path(__file__).resolve().parent
+archivo_origen = carpeta_assets / 'Corporativo.png'  # Cambia esto por el nombre de tu archivo de Paint
+archivo_destino = carpeta_assets / 'mapa_corporativo50x50.txt'
 
 try:
-    texto_binario = pixel_art_a_binario(archivo_origen)
+    texto_mapa = pixel_art_a_mapa(archivo_origen)
     
     # Guardar la matriz en un archivo de texto
     with open(archivo_destino, 'w', encoding='utf-8') as f:
-        f.write(texto_binario)
+        f.write(texto_mapa)
         
-    print(f"¡Listo! Tu matriz de 1s y 0s se ha guardado en '{archivo_destino}'")
+    print(f"¡Listo! Tu mapa se ha guardado en '{archivo_destino}'")
     print("\nVista previa del resultado:")
-    print(texto_binario[:500] + "\n...") # Muestra solo los primeros caracteres como muestra
+    print(texto_mapa[:500] + "\n...") # Muestra solo los primeros caracteres como muestra
     
 except FileNotFoundError:
     print(f"Error: No se encontró el archivo '{archivo_origen}'. Verifícalo.")

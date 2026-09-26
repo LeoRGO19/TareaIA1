@@ -5,8 +5,8 @@ from Logica.dfs import BusquedaDFS
 from Logica.a_estrella import BusquedaEstrella
 from Logica.ida import AlgoritmoBusquedaIDAEstrella
 from Logica.algoritmo_genetico import AlgoritmoGenetico
-NUMERO_DE_ITERACIONES = 200
-KTURNOS_FUEGO = 2
+NUMERO_DE_ITERACIONES = 100
+KTURNOS_FUEGO = 4
 def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=NUMERO_DE_ITERACIONES):
     tasas_supervivencia = []
     tiempos_despeje = []
@@ -20,6 +20,10 @@ def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, n
         sobrevivientes, total, tasa, turnos = gestor.obtener_resultados()
         tasas_supervivencia.append(tasa)
         tiempos_despeje.append(turnos)
+        i = _  # índice de la iteración actual
+
+        if i % (max(1, NUMERO_DE_ITERACIONES // 10)) == 0 or i == NUMERO_DE_ITERACIONES - 1:
+            print(f"  > Progreso: {i}/{NUMERO_DE_ITERACIONES} simulaciones completadas...")
 
     print(f"[{nombre_mapa}] -> Algoritmo: {nombre_algo}")
     print(f"  Tasa Supervivencia Media: {np.mean(tasas_supervivencia) * 100:.2f}%")
@@ -29,9 +33,9 @@ def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, n
 
 if __name__ == "__main__":
     mapas = [
-        ("mapa_laberinto_cuello_botella.txt", "Mapa 1: Cuello de Botella"),
-        ("mapa_laberinto_corporativo.txt", "Mapa 2: Laberinto Corporativo"),
-        ("mapa_abierto.txt", "Mapa 3: Dispersión Abierta")
+        ("mapa_cuello_botella50x50.txt", "Mapa 1: Cuello de Botella"),
+        ("mapa_corporativo50x50.txt", "Mapa 2: Laberinto Corporativo"),
+        ("mapa_abierto50x50.txt", "Mapa 3: Dispersión Abierta")
     ]
 
     algoritmos = [

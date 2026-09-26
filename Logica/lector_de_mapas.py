@@ -26,8 +26,6 @@ class LectorDeMapas:
             for c, val in enumerate(valores):
                 if val == '1':
                     grilla.cambiar_tipo(f_idx, c, "muro")
-                elif val == 'F':
-                    grilla.cambiar_tipo(f_idx, c, "fuego")
                 elif val == 'S':
                     grilla.cambiar_tipo(f_idx, c, "camino")
                     posicion_salida = (f_idx, c)

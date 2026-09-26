@@ -2,7 +2,7 @@ from .algoritmo_de_busqueda import AlgoritmoBusqueda
 import random
 
 class AlgoritmoGenetico(AlgoritmoBusqueda):
-    def __init__(self, tam_poblacion=40, generaciones=40, tasa_mutacion=0.15, prob_sesgo=0.65):
+    def __init__(self, tam_poblacion=15, generaciones=20, tasa_mutacion=0.15, prob_sesgo=0.65):
         super().__init__()
         self.tam_poblacion = tam_poblacion
         self.generaciones = generaciones

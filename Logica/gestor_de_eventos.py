@@ -1,9 +1,11 @@
 import random
 from .lector_de_mapas import LectorDeMapas
 from .agente import Agente
-TOTAL_AGENTES = 80
-AGENTES_MIN_POR_CASILLA = 2
-AGENTES_MAX_POR_CASILLA = 6
+RADIO_PROTECCION_AGENTES = 1
+FILAS_PROTEGIDAS_AL_FINAL = 4
+PROBABILIDAD_PROPAGACION_FUEGO = 0.75
+
+
 class GestorDeEventos:
     def __init__(self, ruta_mapa: str, clase_algoritmo, es_informado=True, k_turnos_fuego: int = 3):
         self.grilla, self.objetivo, pos_agentes = LectorDeMapas.cargar_mapa(ruta_mapa)
@@ -11,64 +13,63 @@ class GestorDeEventos:
         self.turnos_totales = 0
         self.agentes = []
 
-        distribucion = self.distribuir_agentes_exactos(
-            pos_agentes=pos_agentes,
-            total_agentes=TOTAL_AGENTES,
-            min_c=AGENTES_MIN_POR_CASILLA,
-            max_c=AGENTES_MAX_POR_CASILLA
+        for i, pos in enumerate(pos_agentes):
+            ag = Agente(
+                id_agente=i,
+                posicion_inicial=pos,
+                algoritmo_busqueda=clase_algoritmo(),
+                es_informado=es_informado
+            )
+            self.agentes.append(ag)
+            casilla = self.grilla.obtener_casilla(pos[0], pos[1])
+            if casilla:
+                casilla.agregar_agente(ag)
+
+        self.inicializar_fuego()
+
+    def es_celda_valida_para_fuego(self, posicion: tuple[int, int]) -> bool:
+        fila, columna = posicion
+        casilla = self.grilla.obtener_casilla(fila, columna)
+        return bool(
+            casilla
+            and casilla.tipo != "fuego"
+            and posicion != self.objetivo
         )
 
-        # creación e instanciación de agentes
-        id_actual = 0
-        for pos, cantidad in zip(pos_agentes, distribucion):
-            for _ in range(cantidad):
-                ag = Agente(
-                    id_agente=id_actual,
-                    posicion_inicial=pos,
-                    algoritmo_busqueda=clase_algoritmo(),
-                    es_informado=es_informado
-                )
-                self.agentes.append(ag)
-                
-                casilla = self.grilla.obtener_casilla(pos[0], pos[1])
-                if casilla:
-                    casilla.agregar_agente(ag)
-                
-                id_actual += 1
+    def obtener_posiciones_protegidas_fuego_inicial(self) -> set[tuple[int, int]]:
+        posiciones_protegidas = set()
 
-    def distribuir_agentes_exactos(self, pos_agentes, total_agentes: int, min_c: int, max_c: int) -> list[int]:
-        n_casillas = len(pos_agentes)
-        
-        # validar si el total solicitado es matemáticamente realizable
-        if total_agentes < n_casillas * min_c or total_agentes > n_casillas * max_c:
-            raise ValueError(
-                f"No se pueden distribuir {total_agentes} agentes en {n_casillas} casillas "
-                f"con el rango especificado [{min_c}, {max_c}]."
-            )
+        for agente in self.agentes:
+            fila_agente, columna_agente = agente.posicion
+            for desplazamiento_fila in range(-RADIO_PROTECCION_AGENTES, RADIO_PROTECCION_AGENTES + 1):
+                for desplazamiento_columna in range(-RADIO_PROTECCION_AGENTES, RADIO_PROTECCION_AGENTES + 1):
+                    posicion = (
+                        fila_agente + desplazamiento_fila,
+                        columna_agente + desplazamiento_columna
+                    )
+                    if self.grilla.obtener_casilla(*posicion):
+                        posiciones_protegidas.add(posicion)
 
-        # asignación inicial aleatoria dentro del rango
-        conteo = []
-        for _ in range(n_casillas):
-            numero_aleatorio = random.randint(min_c, max_c)
-            conteo.append(numero_aleatorio)
+        primera_fila_protegida = max(0, self.grilla.filas - FILAS_PROTEGIDAS_AL_FINAL)
+        for fila in range(primera_fila_protegida, self.grilla.filas):
+            for columna in range(self.grilla.columnas):
+                posiciones_protegidas.add((fila, columna))
 
-        diferencia = total_agentes - sum(conteo)
+        return posiciones_protegidas
 
-        # ajuste si faltan agentes para llegar a 80
-        while diferencia > 0:
-            idx = random.randint(0, n_casillas - 1)
-            if conteo[idx] < max_c:
-                conteo[idx] += 1
-                diferencia -= 1
+    def inicializar_fuego(self):
+        posiciones_protegidas = self.obtener_posiciones_protegidas_fuego_inicial()
+        posiciones_disponibles = [
+            (fila, columna)
+            for fila in range(self.grilla.filas)
+            for columna in range(self.grilla.columnas)
+            if (fila, columna) not in posiciones_protegidas
+            and self.es_celda_valida_para_fuego((fila, columna))
+        ]
 
-        # ajuste si sobran agentes para llegar a 80
-        while diferencia < 0:
-            idx = random.randint(0, n_casillas - 1)
-            if conteo[idx] > min_c:
-                conteo[idx] -= 1
-                diferencia += 1
-
-        return conteo
+        if posiciones_disponibles:
+            posicion_fuego = random.choice(posiciones_disponibles)
+            self.grilla.cambiar_tipo(*posicion_fuego, "fuego")
 
     def simulacion_terminada(self) -> bool:
         return all(ag.evacuado or ag.fallecido for ag in self.agentes)
@@ -94,23 +95,23 @@ class GestorDeEventos:
             self.propagar_fuego()
 
     def propagar_fuego(self):
-        nuevos_fuegos = []
+        nuevos_fuegos = set()
         for f in range(self.grilla.filas):
             for c in range(self.grilla.columnas):
                 if self.grilla.tablero[f][c].tipo == "fuego":
                     for nf, nc in self.grilla.obtener_vecinos((f, c)):
-                        tipo_vecino = self.grilla.tablero[nf][nc].tipo
-                        if tipo_vecino != "fuego" and tipo_vecino != "objetivo":
-                            # variación estocástica con 75% de probabilidad
-                            if random.random() < 0.75:
-                                nuevos_fuegos.append((nf, nc))
+                        posicion_vecina = (nf, nc)
+                        if self.es_celda_valida_para_fuego(posicion_vecina):
+                            if random.random() < PROBABILIDAD_PROPAGACION_FUEGO:
+                                nuevos_fuegos.add(posicion_vecina)
 
         for f, c in nuevos_fuegos:
             self.grilla.cambiar_tipo(f, c, "fuego")
             casilla = self.grilla.obtener_casilla(f, c)
-            for ag in list(casilla.individuos_actuales):
-                ag.fallecido = True
-                casilla.remover_agente(ag)
+            if casilla:
+                for ag in list(casilla.individuos_actuales):
+                    ag.fallecido = True
+                    casilla.remover_agente(ag)
 
     def obtener_resultados(self):
         total = len(self.agentes)
