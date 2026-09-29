@@ -1,3 +1,8 @@
+# Autor
+
+Leonardo Rafael Guerrero Ortega
+Matricula: 2024047370
+
 # Escape de la torre
 
 Simulador de evacuación en una grilla bidimensional. Los agentes deben llegar a una salida mientras el fuego se propaga y la ocupación de los pasillos genera congestión. El proyecto compara búsqueda no informada, búsqueda informada y una metaheurística genética en tres mapas de 50 × 50.
