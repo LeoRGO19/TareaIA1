@@ -4,7 +4,7 @@ from .algoritmo_de_busqueda import AlgoritmoBusqueda
 class AlgoritmoGenetico(AlgoritmoBusqueda):
     usa_memoria_respaldo = True
 
-    def __init__(self, tam_poblacion=8, generaciones=8, tasa_mutacion=0.15, prob_sesgo=0.65, longitud_maxima=60):
+    def __init__(self, tam_poblacion=40, generaciones=10, tasa_mutacion=0.15, prob_sesgo=0.65, longitud_maxima=60):
         super().__init__()
         self.tam_poblacion = max(2, tam_poblacion)
         self.generaciones = max(1, generaciones)

@@ -6,7 +6,7 @@ from Logica.a_estrella import BusquedaEstrella
 from Logica.ida import AlgoritmoBusquedaIDAEstrella
 from Logica.algoritmo_genetico import AlgoritmoGenetico
 NUMERO_DE_ITERACIONES = 200
-KTURNOS_FUEGO = 3
+KTURNOS_FUEGO = 4
 def evaluar_configuracion(mapa_file, nombre_mapa, algoritmo_cls, es_informado, nombre_algo, n_iteraciones=NUMERO_DE_ITERACIONES):
     tasas_supervivencia = []
     tiempos_despeje = []
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     ]
 
     print("=" * 60)
-    print(f"EJECUTANDO SUITE DE BENCHMARKING ({NUMERO_DE_ITERACIONES} Iteraciones por Configuración)")
+    print(f"EJECUTANDO BENCHMARKING De ({NUMERO_DE_ITERACIONES} Iteraciones por Configuración)")
     print("=" * 60)
 
     for ruta_mapa, nombre_mapa in mapas:

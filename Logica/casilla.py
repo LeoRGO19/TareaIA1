@@ -21,7 +21,14 @@ class Casilla:
 
     def esta_congestionada(self) -> bool:
         # cuello de botella si alcanza la capacidad máxima de la casilla
-        return len(self.individuos_actuales) >= self.capacidad_maxima
+        return (self.capacidad_maxima is not None
+                and len(self.individuos_actuales) >= self.capacidad_maxima)
+
+    def establecer_capacidad_maxima(self, capacidad_maxima: int | None):
+        """Actualiza la capacidad; None representa capacidad ilimitada."""
+        if capacidad_maxima is not None and capacidad_maxima < 1:
+            raise ValueError("La capacidad máxima debe ser al menos 1 o None")
+        self.capacidad_maxima = capacidad_maxima
 
     def obtener_costo(self, funcion_costo=costo_congestion_cuadratica) -> float:
         if self.tipo == "fuego" or self.tipo == "muro":

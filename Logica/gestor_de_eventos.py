@@ -2,7 +2,7 @@ import random
 from .lector_de_mapas import LectorDeMapas
 from .agente import Agente
 RADIO_PROTECCION_AGENTES = 1
-FILAS_PROTEGIDAS_AL_FINAL = 8
+FILAS_PROTEGIDAS_AL_FINAL = 15
 PROBABILIDAD_PROPAGACION_FUEGO = 0.75
 PROBABILIDAD_ATRAVESAR_PARED = 0.25
 
@@ -16,13 +16,20 @@ class GestorDeEventos:
         if not 0.0 <= probabilidad_atravesar_pared <= 1.0:
             raise ValueError("probabilidad_atravesar_pared debe estar entre 0 y 1")
         self.grilla, self.objetivo, pos_agentes = LectorDeMapas.cargar_mapa(ruta_mapa)
+        if not pos_agentes:
+            raise ValueError("El mapa debe contener al menos una posición A para los agentes.")
         if numero_agentes is not None:
-            if numero_agentes < 1 or numero_agentes > len(pos_agentes):
+            if numero_agentes < 1:
                 raise ValueError(
-                    f"El mapa contiene {len(pos_agentes)} posiciones A; "
-                    f"numero_agentes debe estar entre 1 y ese valor."
+                    "numero_agentes debe ser al menos 1."
                 )
-            pos_agentes = pos_agentes[:numero_agentes]
+            cantidad_agentes = numero_agentes
+        else:
+            cantidad_agentes = len(pos_agentes)
+        posicion_inicial = pos_agentes[0]
+        pos_agentes = [posicion_inicial] * cantidad_agentes
+        casilla_inicial = self.grilla.obtener_casilla(*posicion_inicial)
+        casilla_inicial.establecer_capacidad_maxima(cantidad_agentes)
         self.k_turnos_fuego = k_turnos_fuego
         self.probabilidad_fuego = probabilidad_fuego
         self.probabilidad_atravesar_pared = probabilidad_atravesar_pared

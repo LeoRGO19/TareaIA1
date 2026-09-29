@@ -30,8 +30,8 @@ def pixel_art_a_mapa(ruta_imagen):
 
 # --- CONFIGURACIÓN Y EJECUCIÓN ---
 carpeta_assets = Path(__file__).resolve().parent
-archivo_origen = carpeta_assets / 'Corporativo.png'  # Cambia esto por el nombre de tu archivo de Paint
-archivo_destino = carpeta_assets / 'mapa_corporativo50x50.txt'
+archivo_origen = carpeta_assets / 'Abierto.png' 
+archivo_destino = carpeta_assets / 'mapa_abierto50x50.txt'
 
 try:
     texto_mapa = pixel_art_a_mapa(archivo_origen)

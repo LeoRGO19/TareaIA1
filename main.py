@@ -47,21 +47,18 @@ VERDE = (79, 190, 130)
 
 
 def maximo_agentes(mapa_idx, modo, mapa_idx_benchmark):
-    indices = range(len(MAPAS)) if modo == "Benchmark" and mapa_idx_benchmark == len(MAPAS) else (mapa_idx,)
-    disponibles = [len(LectorDeMapas.cargar_mapa(MAPAS[i][1])[2]) for i in indices]
-    return min(LIMITE_AGENTES, min(disponibles, default=1))
+    return LIMITE_AGENTES
 
 
 def crear_gestor(mapa_idx, algoritmo_idx, agentes, k, prob_pared):
     nombre_mapa, archivo = MAPAS[mapa_idx]
     _, algoritmo, informado = ALGORITMOS[algoritmo_idx]
-    total_disponible = len(LectorDeMapas.cargar_mapa(archivo)[2])
     return GestorDeEventos(
         archivo,
         algoritmo,
         es_informado=informado,
         k_turnos_fuego=k,
-        numero_agentes=min(LIMITE_AGENTES, agentes, total_disponible),
+        numero_agentes=min(LIMITE_AGENTES, agentes),
         probabilidad_atravesar_pared=prob_pared,
     )
 
@@ -97,7 +94,6 @@ def ejecutar_benchmark(configuracion, eventos, cancelacion):
     resultados = []
 
     for etiqueta_mapa, archivo_mapa in mapas:
-        disponibles = len(LectorDeMapas.cargar_mapa(archivo_mapa)[2])
         for nombre_algoritmo, algoritmo, informado in ALGORITMOS:
             tasas, despejes, duraciones = [], [], []
             llamadas_ida, limites_ida = 0, 0
@@ -109,7 +105,7 @@ def ejecutar_benchmark(configuracion, eventos, cancelacion):
                 gestor = GestorDeEventos(
                     archivo_mapa, algoritmo, es_informado=informado,
                     k_turnos_fuego=configuracion["k"],
-                    numero_agentes=min(LIMITE_AGENTES, configuracion["agentes"], disponibles),
+                    numero_agentes=min(LIMITE_AGENTES, configuracion["agentes"]),
                     probabilidad_atravesar_pared=configuracion["prob_pared"],
                 )
                 while not gestor.simulacion_terminada() and gestor.turnos_totales < LIMITE_TURNOS:
